@@ -1,6 +1,6 @@
 # NVIDIA Windows VBIOS Vix Loader
 
-**中文社区维护版：** [中文说明与下载](README_CN.md) · 对应上游 v0.3.1，中文版本 v0.3.1-zh.1。
+**中文社区维护版：** [中文说明与下载](README_CN.md) · [对应上游版本与中文修订](upstream-version.json)。
 上游原作者文档保留如下；中文维护分支为 `codex/zh-cn`。
 
 English | [Español](README_es.md)

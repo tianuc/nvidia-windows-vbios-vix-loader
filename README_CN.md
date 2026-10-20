@@ -2,7 +2,7 @@
 
 上游：[Panchovix/nvidia-windows-vbios-vix-loader](https://github.com/Panchovix/nvidia-windows-vbios-vix-loader)。中文维护：[tianuc/nvidia-windows-vbios-vix-loader](https://github.com/tianuc/nvidia-windows-vbios-vix-loader)。
 
-当前对应上游 **v0.3.1**，中文修订 **zh.1**。版本号沿用 `v上游版本-zh.中文修订`，例如 `v0.3.1-zh.1`。本项目是社区中文维护版，与 NVIDIA 没有隶属关系。原作者版权及 GPL-3.0-or-later 许可证均保留。
+当前对应的上游版本与中文修订见 [upstream-version.json](upstream-version.json)。版本号沿用 `v上游版本-zh.中文修订`，例如 `v0.3.1-zh.1`。本项目是社区中文维护版，与 NVIDIA 没有隶属关系。原作者版权及 GPL-3.0-or-later 许可证均保留。
 
 ## 下载和打开
 
