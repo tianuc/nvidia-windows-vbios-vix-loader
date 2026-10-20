@@ -1,0 +1,62 @@
+name: 同步上游版本
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_tag:
+        description: '上游标签；留空时读取最新正式版'
+        required: false
+        type: string
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      REQUESTED_TAG: ${{ inputs.upstream_tag }}
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: codex/zh-cn
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: 合并上游标签并创建待审阅更新
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$REQUESTED_TAG"
+          if [ -z "$tag" ]; then
+            tag="$(gh api repos/Panchovix/nvidia-windows-vbios-vix-loader/releases/latest --jq .tag_name)"
+          fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo 'Only official vX.Y.Z tags are accepted'; exit 1
+          fi
+          current="$(python -c 'import json; print(json.load(open("upstream-version.json"))["tag"])')"
+          if [ "$tag" = "$current" ]; then echo "Already aligned with $tag"; exit 0; fi
+          git remote add upstream https://github.com/Panchovix/nvidia-windows-vbios-vix-loader.git
+          git fetch upstream "refs/tags/$tag:refs/tags/upstream-$tag"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          branch="codex/sync-$tag"
+          git switch -c "$branch"
+          git merge --no-edit "refs/tags/upstream-$tag"
+          UPSTREAM_TAG="$tag" python - <<'PY'
+          import json,os,subprocess
+          from pathlib import Path
+          p=Path('upstream-version.json'); data=json.loads(p.read_text())
+          data.update(tag=os.environ['UPSTREAM_TAG'],chinese_revision=1)
+          data['commit']=subprocess.check_output(['git','rev-parse','refs/tags/upstream-'+data['tag']+'^{commit}'],text=True).strip()
+          p.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          PY
+          python -m unittest discover -s tests -v
+          git add upstream-version.json
+          git commit -m "Align Chinese maintenance with upstream $tag"
+          git push origin "$branch"
+          gh pr create --base codex/zh-cn --head "$branch" --title "同步上游 $tag" \
+            --body "合并上游正式版本并更新版本记录。请检查新增词条、中文说明与 Windows 构建，通过后再合并和发布对应中文标签。"

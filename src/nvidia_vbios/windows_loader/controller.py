@@ -8,6 +8,7 @@ import ctypes
 import os
 from .cli import step_text
 from .operations import MIN_DRIVER, VERIFY_OK, LoaderError, load, status, unload, verify
+from .locale_zh import STRINGS_ZH, translate_reason
 
 MINIMUM = f'{MIN_DRIVER[0]}.{MIN_DRIVER[1]:02d}'
 
@@ -194,8 +195,9 @@ def system_language():
     return language_for(ctypes.windll.kernel32.GetUserDefaultUILanguage())
 
 
+STRINGS['zh_CN'] = STRINGS_ZH
 # Each language is named in itself in the Language menu.
-LANGUAGES = (('en', 'English'), ('es', 'Español'))
+LANGUAGES = (('zh_CN', '简体中文'), ('en', 'English'), ('es', 'Español'))
 THEMES = ('auto', 'light', 'dark')
 
 
@@ -290,6 +292,8 @@ class Controller:
     def _reason(self, exc):
         text = str(exc)
         hint = next((self.text[key] for phrase, key in HINTS if phrase in text), None)
+        if self.language == 'zh_CN':
+            text = translate_reason(text)
         return f'{text} {hint}' if hint else text
 
     # -- what the window shows ------------------------------------------------------------------------------
@@ -359,6 +363,14 @@ class Controller:
         return self.text['will_restart'] if self.restart else self.text['no_restart']
 
     def _steps(self, report):
+        if self.language == 'zh_CN':
+            def chinese_step(step):
+                name = step['name']
+                if step['op'] != 'set':
+                    return f'删除 {name}'
+                value = f"{step['size']} 字节，SHA256 {step['sha256']}" if 'size' in step else step.get('value', '')
+                return f"设置 {name} = {step['type']} {value}"
+            return '\n'.join('  ' + chinese_step(step) for step in report['steps'])
         return '\n'.join('  ' + step_text(step) for step in report['steps'])
 
     def confirm_load(self):
@@ -388,7 +400,7 @@ class Controller:
         parts = [t['confirm_remove'].format(index=gpu['index'], name=gpu['name'], location=gpu['location'] or '?',
                                             steps=self._steps(report))]
         if report.get('message'):
-            parts.append(t['note'].format(message=report['message']))
+            parts.append(t['note'].format(message=self._reason(report['message'])))
         parts.append(self._restart_note())
         return '\n\n'.join(parts), None
 
@@ -420,7 +432,7 @@ class Controller:
             if report['steps']:
                 lines.append(t['removed'].format(index=index))
             if report.get('message'):
-                lines.append(t['note'].format(message=report['message']))
+                lines.append(t['note'].format(message=self._reason(report['message'])))
         restart = report.get('restart')
         if restart is None:
             return True, lines

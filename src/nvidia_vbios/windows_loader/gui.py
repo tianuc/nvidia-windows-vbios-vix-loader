@@ -66,7 +66,7 @@ class Window:
         self.results = queue.Queue()
         self.failed = False
         self.action = None            # the action running in the worker
-        root.minsize(780, 540)
+        root.minsize(1080, 620)
         root.columnconfigure(0, weight=1)
         root.rowconfigure(2, weight=1)
         root.rowconfigure(5, weight=2)
@@ -321,7 +321,7 @@ def _dpi_aware():
 def main(argv=None, platform=None):
     parser = argparse.ArgumentParser(prog=PROG, description=__doc__.split('\n')[0])
     parser.add_argument('--version', action='version', version=f'{PROG} {__version__}')
-    parser.add_argument('--lang', choices=('en', 'es'), help='language (default: the Windows display language)')
+    parser.add_argument('--lang', choices=tuple(code for code, _ in LANGUAGES), help='language (default: the Windows display language)')
     parser.add_argument('--theme', choices=THEMES, default='auto',
                         help='light or dark (default auto: the Windows app mode)')
     args = parser.parse_args(argv)
@@ -334,8 +334,19 @@ def main(argv=None, platform=None):
     if os.name == 'nt':
         _dpi_aware()
     root = tk.Tk()
+    if args.lang == 'zh_CN':
+        for name in ('TkDefaultFont', 'TkTextFont', 'TkMenuFont', 'TkHeadingFont', 'TkCaptionFont',
+                     'TkSmallCaptionFont', 'TkIconFont', 'TkTooltipFont'):
+            font.nametofont(name).configure(family='Microsoft YaHei UI', size=10)
     window = Window(root, Controller(platform, args.lang or system_language(), args.theme))
+    if window.c.language == 'zh_CN':
+        # Follow the upstream README's recommendation for a display-driving GPU.
+        window.c.restart = False
+        window.restart.set(False)
     window.refresh()
+    if window.c.language == 'zh_CN':
+        window.log(['本工具用于加载 VBIOS 覆盖；编辑功耗、频率等参数需要另行准备匹配的 VBIOS 文件。',
+                    '显示器连接当前显卡时，建议通过重启 Windows 应用更改。'])
     if smoke:
         root.attributes('-topmost', True)
         # The window is rebuilt in the other language and the other theme, so the CI screenshot shows both.

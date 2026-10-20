@@ -1,5 +1,8 @@
 # NVIDIA Windows VBIOS Vix Loader
 
+**中文社区维护版：** [中文说明与下载](README_CN.md) · 对应上游 v0.3.1，中文版本 v0.3.1-zh.1。
+上游原作者文档保留如下；中文维护分支为 `codex/zh-cn`。
+
 English | [Español](README_es.md)
 
 Loads a modified VBIOS for an NVIDIA GPU on Windows **without flashing it**. The image is stored in the
